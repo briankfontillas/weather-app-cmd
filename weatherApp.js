@@ -1,9 +1,10 @@
+const cf = require('./config.js');
 const axios = require('axios');
 const readline = require('readline-sync');
 
 class WeatherDB {
   static URL = 'http://api.weatherstack.com/';
-  static Ferenheit(celcius) {
+  static fahrenheit(celcius) {
     return (1.8 * celcius) + 32;
   }
 
@@ -52,7 +53,9 @@ class Session {
         console.log('----------------------');
         console.log();
         console.log(`Weather description - ${current.weather_descriptions[0]}`);
-        console.log(`Current tempurature - ${WeatherDB.Ferenheit(current.temperature)} degrees celcius`);
+        console.log(`Current tempurature - ${WeatherDB.fahrenheit(current.temperature)} degrees fahrenheit`);
+        console.log(`                      ${current.temperature} degrees celcius`);
+
       });
   }
 
@@ -63,7 +66,8 @@ class Session {
   }
 }
 
-const weatherApi = new WeatherDB('input accesskey');
+const ACCESS_KEY = cf.HIDDEN_VALUES.access_key;
+const weatherApi = new WeatherDB(ACCESS_KEY);
 const session = new Session(weatherApi);
 
 session.run();
