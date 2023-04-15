@@ -14,55 +14,83 @@ class WeatherDB {
     this.currentSearch = null;
   }
 
-  getData() {
-    let self = this;
-    return axios.get(`${WeatherDB.URL}current?access_key=${this.accessKey}&query=${this.locationSearch}`)
-    .then(function (response) {
-      self.currentSearch = response.data;
-    });
+  async getData() {
+    try {
+      const response = await axios.get(`${WeatherDB.URL}current?access_key=${this.accessKey}&query=${this.locationSearch}`);
+      this.currentSearch = response.data;
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
 
 class Session {
   constructor(db) {
     this.db = db;
+    this.proceed = true;
+  }
+
+  enterDelay() {
+    console.log('Press enter to continue...');
+    readline.question('');
   }
 
   welcome() {
     console.log('Welcome to the WeatherApp!');
+    console.log('');
+    this.enterDelay();
+    console.clear();
+  }
+
+  goodbye() {
+    console.log('Have a great day!');
   }
 
   locationInput() {
-    console.log('Input a location: ');
+    console.log('Input a location (or "end" to exit): ');
     let location = readline.question();
-    console.log();
-    this.db.locationSearch = location;
+    console.log("");
+    if (location.toLowerCase() === 'end') {
+      this.proceed = false;
+    } else {
+      this.db.locationSearch = location;
+    }
   }
 
-  displayWeather() {
+  async displayWeather() {
     console.clear();
-    let self = this;
-    return this.db.getData()
-      .then(function() {
-        let weatherObj = self.db.currentSearch;
-        let location = weatherObj.location;
-        let current = weatherObj.current;
+    await this.db.getData();
+    let weatherObj = this.db.currentSearch;
+    if (weatherObj.error) {
+      console.log('Please specify a valid location identifier.');
+    } else {
+      let location = weatherObj.location;
+      let current = weatherObj.current;
 
-        console.log(`Location: ${location.name}, ${location.region} - ${location.country}`);
-        console.log(Date());
-        console.log('----------------------');
-        console.log();
-        console.log(`Weather description - ${current.weather_descriptions[0]}`);
-        console.log(`Current tempurature - ${WeatherDB.fahrenheit(current.temperature)} degrees fahrenheit`);
-        console.log(`                      ${current.temperature} degrees celcius`);
-
-      });
+      console.log(`Location: ${location.name}, ${location.region} - ${location.country}`);
+      console.log(Date());
+      console.log('----------------------');
+      console.log();
+      console.log(`Weather description - ${current.weather_descriptions[0]}`);
+      console.log(`Current temperature - ${WeatherDB.fahrenheit(current.temperature)} degrees fahrenheit`);
+      console.log(`                      ${current.temperature} degrees Celsius`);
+      console.log('');
+    }
+    
   }
 
-  run() {
+  checkProceed() {
+    return this.proceed;
+  }
+
+  async run() {
     this.welcome();
-    this.locationInput()
-    this.displayWeather();
+    while (true) {
+      this.locationInput();
+      if (!this.checkProceed) break;
+      await this.displayWeather();
+    }
+    this.goodbye();
   }
 }
 
